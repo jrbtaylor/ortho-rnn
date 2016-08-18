@@ -20,8 +20,8 @@ import recurrent
 
 def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
                    bptt_limit=784,momentum=0.9,l1_reg=0,l2_reg=0.001,
-                   n_epochs=1000,patience_epochs=20,batch_size=1000,
-                   clip_limit=1.,eps_idem=0.01,eps_norm=0.01,
+                   n_epochs=1000,init_patience=20,batch_size=1000,
+                   clip_limit=1.,eps_idem=0.01,eps_norm=0.01,eps_ortho=0.0001,
                    repeated_exp=10):
     """
     Test RNNs on sequential MNIST
@@ -70,10 +70,18 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
     
     def test_orthopen2(eps_idem,eps_norm):
         # Build the model
-        print('... building the 2nd orthogonality-constrainted RNN')
+        print('... building the 2nd orthogonality-constrained RNN')
         model = recurrent.rnn_ortho2(x,n_in,n_hidden,10,bptt_limit)
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_idem*model.idem+eps_norm*model.norm
+        return train_model(model,cost)
+        
+    def test_orthopen3(eps_ortho):
+        # Build the model
+        print('... building the 3rd orthogonality-constrained RNN')
+        model = recurrent.rnn_ortho3(x,n_in,n_hidden,10,bptt_limit)
+        cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
+               eps_ortho*model.ortho
         return train_model(model,cost)
         
     def train_model(model,cost):
@@ -115,8 +123,7 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
         # Train the model
         print('... training the model')
         # early-stopping parameter
-        init_patience = patience_epochs*n_train_batches
-        patience = init_patience
+        patience = init_patience*n_train_batches
         
         validation_frequency = n_train_batches
         best_validation_loss = numpy.inf
@@ -147,7 +154,7 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
     
                     # if we got the best validation score until now
                     if this_validation_loss < best_validation_loss:
-                        patience = init_patience
+                        patience = init_patience*n_train_batches
                         best_validation_loss = this_validation_loss
     
                         test_losses = [test_model(i)
@@ -157,11 +164,12 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
                         print(('      test error: %f %%') %
                             (test_score * 100.)
                         )
-                    elif math.isnan(this_validation_loss):
+                    elif math.isnan(train_loss_epoch):
+                        print('Stopping training due to NaNs')
                         done_looping = True
                         break
                     else:
-                        patience -= 1
+                        patience -= n_train_batches
     
                 if patience <= 0:
                     done_looping = True
@@ -195,23 +203,27 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
             val_results[n], test_results[n] = fn
         return (val_results,test_results)
     
-    gradclip_val, gradclip_test = repeat_test(test_gradclip(clip_limit),repeated_exp)
+#    gradclip_val, gradclip_test = repeat_test(test_gradclip(clip_limit),repeated_exp)
     orthopen_val, orthopen_test = repeat_test(test_orthopen(eps_idem,eps_norm),repeated_exp)
-    orthopen2_val, orthopen2_test = repeat_test(test_orthopen2(eps_idem,eps_norm),repeated_exp)
+#    orthopen2_val, orthopen2_test = repeat_test(test_orthopen2(eps_idem,eps_norm),repeated_exp)
+#    orthopen3_val, orthopen3_test = repeat_test(test_orthopen3(eps_ortho),repeated_exp)
     
     # print the results
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    print('  Error rates over '+str(repeated_exp)+' experiments')
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    print('--- Gradient Clipping ---')
-    print('    validation:  mean '+str(numpy.mean(gradclip_val))+'%% ... min '+str(numpy.min(gradclip_val))+'%%')
-    print('    test:        mean '+str(numpy.mean(gradclip_test))+'%% ... min '+str(numpy.min(gradclip_test))+'%%')
-    print('--- |h-hW| Penalty ---')
-    print('    validation:  mean '+str(numpy.mean(orthopen_val))+'%% ... min '+str(numpy.min(orthopen_val))+'%%')
-    print('    test:        mean '+str(numpy.mean(orthopen_test))+'%% ... min '+str(numpy.min(orthopen_test))+'%%')
-    print('--- |hW-hWW| Penalty ---')
-    print('    validation:  mean '+str(numpy.mean(orthopen2_val))+'%% ... min '+str(numpy.min(orthopen2_val))+'%%')
-    print('    test:        mean '+str(numpy.mean(orthopen2_test))+'%% ... min '+str(numpy.min(orthopen2_test))+'%%')
+#    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+#    print('  Error rates over '+str(repeated_exp)+' experiments')
+#    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+#    print('--- Gradient Clipping ---')
+#    print('    validation:  mean '+str(numpy.mean(gradclip_val))+'%% ... min '+str(numpy.min(gradclip_val))+'%%')
+#    print('    test:        mean '+str(numpy.mean(gradclip_test))+'%% ... min '+str(numpy.min(gradclip_test))+'%%')
+#    print('--- |h-hW| Penalty ---')
+#    print('    validation:  mean '+str(numpy.mean(orthopen_val))+'%% ... min '+str(numpy.min(orthopen_val))+'%%')
+#    print('    test:        mean '+str(numpy.mean(orthopen_test))+'%% ... min '+str(numpy.min(orthopen_test))+'%%')
+#    print('--- |hW-hWW| Penalty ---')
+#    print('    validation:  mean '+str(numpy.mean(orthopen2_val))+'%% ... min '+str(numpy.min(orthopen2_val))+'%%')
+#    print('    test:        mean '+str(numpy.mean(orthopen2_test))+'%% ... min '+str(numpy.min(orthopen2_test))+'%%')
+#    print("--- |W'W-I| Penalty ---")
+#    print('    validation:  mean '+str(numpy.mean(orthopen3_val))+'%% ... min '+str(numpy.min(orthopen3_val))+'%%')
+#    print('    test:        mean '+str(numpy.mean(orthopen3_test))+'%% ... min '+str(numpy.min(orthopen3_test))+'%%')
     
 
 if __name__ == "__main__":
