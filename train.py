@@ -12,16 +12,17 @@ import theano
 from theano import tensor as T
 
 from collections import OrderedDict
-import six.moves.cPickle as pickle
 import timeit
+import math
 
 import data
 import recurrent
 
 def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
                    bptt_limit=784,momentum=0.9,l1_reg=0,l2_reg=0.001,
-                   n_epochs=10,batch_size=1000,
-                   clip_limit=1.,eps_idem=0.01,eps_norm=0.01):
+                   n_epochs=1000,patience_epochs=20,batch_size=1000,
+                   clip_limit=1.,eps_idem=0.01,eps_norm=0.01,
+                   repeated_exp=10):
     """
     Test RNNs on sequential MNIST
     
@@ -66,6 +67,14 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_idem*model.idem+eps_norm*model.norm
         return train_model(model,cost)
+    
+    def test_orthopen2(eps_idem,eps_norm):
+        # Build the model
+        print('... building the 2nd orthogonality-constrainted RNN')
+        model = recurrent.rnn_ortho2(x,n_in,n_hidden,10,bptt_limit)
+        cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
+               eps_idem*model.idem+eps_norm*model.norm
+        return train_model(model,cost)
         
     def train_model(model,cost):
         # SGD w/ momentum
@@ -106,7 +115,7 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
         # Train the model
         print('... training the model')
         # early-stopping parameter
-        init_patience = 20*n_train_batches
+        init_patience = patience_epochs*n_train_batches
         patience = init_patience
         
         validation_frequency = n_train_batches
@@ -148,10 +157,9 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
                         print(('      test error: %f %%') %
                             (test_score * 100.)
                         )
-    
-                        # save the best model
-                        with open('best_model.pkl', 'wb') as f:
-                            pickle.dump(model, f)
+                    elif math.isnan(this_validation_loss):
+                        done_looping = True
+                        break
                     else:
                         patience -= 1
     
@@ -161,7 +169,7 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
             end_time = timeit.default_timer()        
             print(
                 (
-                    'Epoch %i, training loss: %f, training error: %f%%, time per sample: %f ms'
+                    'Epoch %i, training loss: %f, training error: %f %%, time per sample: %f ms'
                     ) %
                     (
                         epoch,
@@ -172,16 +180,39 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
                 )
         print(
             (
-                'Optimization complete with best validation score of %f %%,'
-                'with test performance %f %%'
+                'Optimization complete with best validation error of %f %%,'
+                'with test error %f %%'
             )
             % (best_validation_loss * 100., test_score * 100.)
         )
-        return [best_validation_loss*100,test_score*100]
+        return (best_validation_loss*100,test_score*100)
 
-    # compare the two methods
-    [gradclip_val,gradclip_test] = test_gradclip(clip_limit)
-    [orthopen_val,orthopen_test] = test_orthopen(eps_idem,eps_norm)
+    # repeat the test and log all the returns
+    def repeat_test(fn,rep):
+        val_results = numpy.zeros((rep,),dtype=theano.config.floatX)
+        test_results = numpy.zeros((rep,),dtype=theano.config.floatX)
+        for n in range(rep):
+            val_results[n], test_results[n] = fn
+        return (val_results,test_results)
+    
+    gradclip_val, gradclip_test = repeat_test(test_gradclip(clip_limit),repeated_exp)
+    orthopen_val, orthopen_test = repeat_test(test_orthopen(eps_idem,eps_norm),repeated_exp)
+    orthopen2_val, orthopen2_test = repeat_test(test_orthopen2(eps_idem,eps_norm),repeated_exp)
+    
+    # print the results
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    print('  Error rates over '+str(repeated_exp)+' experiments')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    print('--- Gradient Clipping ---')
+    print('    validation:  mean '+str(numpy.mean(gradclip_val))+'%% ... min '+str(numpy.min(gradclip_val))+'%%')
+    print('    test:        mean '+str(numpy.mean(gradclip_test))+'%% ... min '+str(numpy.min(gradclip_test))+'%%')
+    print('--- |h-hW| Penalty ---')
+    print('    validation:  mean '+str(numpy.mean(orthopen_val))+'%% ... min '+str(numpy.min(orthopen_val))+'%%')
+    print('    test:        mean '+str(numpy.mean(orthopen_test))+'%% ... min '+str(numpy.min(orthopen_test))+'%%')
+    print('--- |hW-hWW| Penalty ---')
+    print('    validation:  mean '+str(numpy.mean(orthopen2_val))+'%% ... min '+str(numpy.min(orthopen2_val))+'%%')
+    print('    test:        mean '+str(numpy.mean(orthopen2_test))+'%% ... min '+str(numpy.min(orthopen2_test))+'%%')
+    
 
 if __name__ == "__main__":
     compare_models()
