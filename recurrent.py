@@ -13,9 +13,9 @@ from theano.tensor import tanh
 from theano.tensor.nnet import relu, sigmoid
 from theano.tensor.nnet.nnet import softmax, categorical_crossentropy
 
-rng = numpy.random.RandomState(1)
+rng0 = numpy.random.RandomState(1)
 
-def _uniform_weight(n1,n2):
+def _uniform_weight(n1,n2,rng=rng0):
     limit = numpy.sqrt(6./(n1+n2))
     return theano.shared((rng.uniform(low=-limit,
                                       high=limit,
@@ -23,7 +23,7 @@ def _uniform_weight(n1,n2):
                          ).astype(theano.config.floatX),
                          borrow=True)
 
-def _ortho_weight(n):
+def _ortho_weight(n,rng=rng0):
     W = rng.randn(n, n)
     u, s, v = numpy.linalg.svd(W)
     return theano.shared(u.astype(theano.config.floatX),
@@ -34,7 +34,7 @@ def _zero_bias(n):
                          borrow=True)
 
 class rnn(object):
-    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit):
+    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
         """
         Initialize a basic single-layer RNN
         
@@ -46,9 +46,9 @@ class rnn(object):
         output_activation:    non-linearity at output units (e.g. softmax)
         bptt_limit:    # of steps for backprop through time
         """
-        self.Wx = _uniform_weight(n_in,n_hidden)
-        self.Wh = _ortho_weight(n_hidden)
-        self.Wy = _uniform_weight(n_hidden,n_out)
+        self.Wx = _uniform_weight(n_in,n_hidden,rng)
+        self.Wh = _ortho_weight(n_hidden,rng)
+        self.Wy = _uniform_weight(n_hidden,n_out,rng)
         self.bh = _zero_bias(n_hidden)
         self.by = _zero_bias(n_out)
         self.params = [self.Wx,self.Wh,self.Wy,self.bh,self.by]
@@ -79,7 +79,7 @@ class rnn(object):
         
 
 class rnn_ortho(rnn):
-    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit):
+    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
         super(rnn_ortho,self).__init__(x,n_in,n_hidden,n_out,bptt_limit)
         def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
             hWh = T.dot(h_tm1,Wh)
@@ -100,7 +100,7 @@ class rnn_ortho(rnn):
 
         
 class rnn_ortho2(rnn):
-    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit):
+    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
         super(rnn_ortho2,self).__init__(x,n_in,n_hidden,n_out,bptt_limit)
         def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
             hWh = T.dot(h_tm1,Wh)
@@ -121,7 +121,7 @@ class rnn_ortho2(rnn):
 
 
 class rnn_ortho3(rnn):
-    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit):
+    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
         super(rnn_ortho3,self).__init__(x,n_in,n_hidden,n_out,bptt_limit)
         self.ortho = T.sum(T.sqr(T.dot(self.Wh,self.Wh.T)-T.identity_like(self.Wh)))
         

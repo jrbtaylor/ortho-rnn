@@ -52,34 +52,34 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
     x = T.tensor3('x')
     y = T.ivector('y') # labels are a 1D vector of integers
 
-    def test_gradclip(clip_limit):
+    def test_gradclip(clip_limit,seed=1):
         # Build the model
         print('... building the gradient-clipped RNN')
-        model = recurrent.rnn(x,n_in,n_hidden,10,bptt_limit)
+        model = recurrent.rnn(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         unclipped_cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2
         cost = theano.gradient.grad_clip(unclipped_cost,-clip_limit,clip_limit)
         return train_model(model,cost)
     
-    def test_orthopen(eps_idem,eps_norm):
+    def test_orthopen(eps_idem,eps_norm,seed=1):
         # Build the model
         print('... building the orthogonality-constrained RNN')
-        model = recurrent.rnn_ortho(x,n_in,n_hidden,10,bptt_limit)
+        model = recurrent.rnn_ortho(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_idem*model.idem+eps_norm*model.norm
         return train_model(model,cost)
     
-    def test_orthopen2(eps_idem,eps_norm):
+    def test_orthopen2(eps_idem,eps_norm,seed=1):
         # Build the model
         print('... building the 2nd orthogonality-constrained RNN')
-        model = recurrent.rnn_ortho2(x,n_in,n_hidden,10,bptt_limit)
+        model = recurrent.rnn_ortho2(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_idem*model.idem+eps_norm*model.norm
         return train_model(model,cost)
         
-    def test_orthopen3(eps_ortho):
+    def test_orthopen3(eps_ortho,seed=1):
         # Build the model
         print('... building the 3rd orthogonality-constrained RNN')
-        model = recurrent.rnn_ortho3(x,n_in,n_hidden,10,bptt_limit)
+        model = recurrent.rnn_ortho3(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_ortho*model.ortho
         return train_model(model,cost)
@@ -174,7 +174,7 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
                 if patience <= 0:
                     done_looping = True
                     break
-            end_time = timeit.default_timer()        
+            end_time = timeit.default_timer()
             print(
                 (
                     'Epoch %i, training loss: %f, training error: %f %%, time per sample: %f ms'
@@ -200,13 +200,13 @@ def compare_models(learning_rate = 1e-1,n_in=14,n_hidden=256,
         val_results = numpy.zeros((rep,),dtype=theano.config.floatX)
         test_results = numpy.zeros((rep,),dtype=theano.config.floatX)
         for n in range(rep):
-            val_results[n], test_results[n] = fn
+            val_results[n], test_results[n] = fn(n)
         return (val_results,test_results)
     
-    gradclip_val, gradclip_test = repeat_test(test_gradclip(clip_limit),repeated_exp)
-    orthopen_val, orthopen_test = repeat_test(test_orthopen(eps_idem,eps_norm),repeated_exp)
-    orthopen2_val, orthopen2_test = repeat_test(test_orthopen2(eps_idem,eps_norm),repeated_exp)
-    orthopen3_val, orthopen3_test = repeat_test(test_orthopen3(eps_ortho),repeated_exp)
+    gradclip_val, gradclip_test = repeat_test(lambda seed: test_gradclip(clip_limit,seed),repeated_exp)
+    orthopen_val, orthopen_test = repeat_test(lambda seed: test_orthopen(eps_idem,eps_norm,seed),repeated_exp)
+    orthopen2_val, orthopen2_test = repeat_test(lambda seed: test_orthopen2(eps_idem,eps_norm,seed),repeated_exp)
+    orthopen3_val, orthopen3_test = repeat_test(lambda seed: test_orthopen3(eps_ortho,seed),repeated_exp)
     
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     print('  Error rates over '+str(repeated_exp)+' experiments')
