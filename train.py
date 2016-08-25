@@ -41,9 +41,12 @@ def experiment(learning_rate=1e-1, n_in=14, n_hidden=256,
     datasets = [(train_set_x,train_set_y),(valid_set_x,valid_set_y),(test_set_x,test_set_y)]
     
     # Calculate batch numbers
-    n_train_batches = train_set_x.get_value(borrow=True).shape[0] // batch_size
-    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
-    n_test_batches = test_set_x.get_value(borrow=True).shape[0] // batch_size
+#    n_train_batches = train_set_x.get_value(borrow=True).shape[0] // batch_size
+#    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
+#    n_test_batches = test_set_x.get_value(borrow=True).shape[0] // batch_size
+    n_train_batches = train_set_x.shape[0] // batch_size
+    n_valid_batches = valid_set_x.shape[0] // batch_size
+    n_test_batches = test_set_x.shape[0] // batch_size
     
     # Define all the experiment functions
     def test_gradclip(clip_limit,seed=1):
