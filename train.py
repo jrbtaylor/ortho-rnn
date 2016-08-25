@@ -113,28 +113,28 @@ def experiment(learning_rate=1e-1, n_in=14, n_hidden=256,
                          numpy.min(test_results)))
     
     # hyperparameter search for gradient clipping
-    clip_limits = [10**x for x in range(-2,3)]
+    clip_limits = [10**x for x in range(-1,0)]#-2,3)]
     for idx,clip_limit in enumerate(clip_limits):
         valid_results, test_results = repeat_test(lambda seed: test_gradclip(clip_limit,seed),repeated_exp)
         log_results('gradclip.csv',idx,clip_limit,valid_results,test_results)
         
     # hyperparameter search for orthogonality penalty
-    eps_idems = [10**x for x in range(-4,1)]
-    eps_norms = [10**x for x in range(-4,1)]
+    eps_idems = [10**x for x in range(-3,-2)]#-4,1)]
+    eps_norms = [10**x for x in range(-3,-2)]#-4,1)]
     for idx,(eps_idem,eps_norm) in enumerate(itertools.product(eps_idems,eps_norms)):
         valid_results, test_results = repeat_test(lambda seed: test_orthopen(eps_idem,eps_norm,seed),repeated_exp)
         log_results('orthopen1.csv',idx,[eps_idem,eps_norm],valid_results,test_results)
         
     # hyperparameter search for orthogonality penalty
-    eps_idems = [10**x for x in range(-4,1)]
-    eps_norms = [10**x for x in range(-4,1)]
+    eps_idems = [10**x for x in range(-3,-2)]#-4,1)]
+    eps_norms = [10**x for x in range(-3,-2)]#-4,1)]
     for idx,(eps_idem,eps_norm) in enumerate(itertools.product(eps_idems,eps_norms)):
         valid_results, test_results = repeat_test(lambda seed: test_orthopen2(eps_idem,eps_norm,seed),repeated_exp)
         log_results('orthopen2.csv',idx,[eps_idem,eps_norm],valid_results,test_results)
     
     # hyperparameter search for orthogonality penalty
-    eps_orthos = [10**x for x in range(-6,-1)]
-    for idx,eps_ortho in eps_orthos:
+    eps_orthos = [10**x for x in range(-3,-2)]#-6,-1)]
+    for idx,eps_ortho in enumerate(eps_orthos):
         valid_results, test_results = repeat_test(lambda seed: test_orthopen3(eps_ortho,seed),repeated_exp)
         log_results('orthopen3.csv',idx,eps_ortho,valid_results,test_results)
 
