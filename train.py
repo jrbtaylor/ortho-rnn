@@ -103,7 +103,7 @@ def experiment(learning_rate=1e-1, n_in=14, n_hidden=256,
             # check if old log exists and delete
             if os.path.isfile(filename):
                 os.remove(filename)
-        file = open(filename)
+        file = open(filename,'wt')
         writer = csv.writer(file)
         if line==0:
             writer.writerow(('Hyperparameters','Validation mean',
