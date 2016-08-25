@@ -40,52 +40,55 @@ def experiment(learning_rate=1e-1, n_in=14, n_hidden=256,
     # Re-wrap dataset for sgd function
     datasets = [(train_set_x,train_set_y),(valid_set_x,valid_set_y),(test_set_x,test_set_y)]
     
-    
+    # Calculate batch numbers
+    n_train_batches = train_set_x.get_value(borrow=True).shape[0] // batch_size
+    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
+    n_test_batches = test_set_x.get_value(borrow=True).shape[0] // batch_size
     
     # Define all the experiment functions
     def test_gradclip(clip_limit,seed=1):
         # Build the model
         print('... building the gradient-clipped RNN')
-        # Allocate symbolic variables
         x = T.tensor3('x')
         y = T.ivector('y') # labels are a 1D vector of integers
         model = recurrent.rnn(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         unclipped_cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2
         cost = theano.gradient.grad_clip(unclipped_cost,-clip_limit,clip_limit)
-        return optim.sgd(datasets,model,cost,x,y,batch_size,learning_rate,momentum,init_patience,n_epochs)
+        return optim.sgd(datasets,model,cost,x,y,n_train_batches,n_valid_batches,n_test_batches,
+                         batch_size,learning_rate,momentum,init_patience,n_epochs)
     
     def test_orthopen(eps_idem,eps_norm,seed=1):
         # Build the model
         print('... building the orthogonality-constrained RNN')
-        # Allocate symbolic variables
         x = T.tensor3('x')
         y = T.ivector('y') # labels are a 1D vector of integers
         model = recurrent.rnn_ortho(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_idem*model.idem+eps_norm*model.norm
-        return optim.sgd(datasets,model,cost,x,y,batch_size,learning_rate,momentum,init_patience,n_epochs)
+        return optim.sgd(datasets,model,cost,x,y,n_train_batches,n_valid_batches,n_test_batches,
+                         batch_size,learning_rate,momentum,init_patience,n_epochs)
     
     def test_orthopen2(eps_idem,eps_norm,seed=1):
         # Build the model
         print('... building the 2nd orthogonality-constrained RNN')
-        # Allocate symbolic variables
         x = T.tensor3('x')
         y = T.ivector('y') # labels are a 1D vector of integers
         model = recurrent.rnn_ortho2(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_idem*model.idem+eps_norm*model.norm
-        return optim.sgd(datasets,model,cost,x,y,batch_size,learning_rate,momentum,init_patience,n_epochs)
+        return optim.sgd(datasets,model,cost,x,y,n_train_batches,n_valid_batches,n_test_batches,
+                         batch_size,learning_rate,momentum,init_patience,n_epochs)
         
     def test_orthopen3(eps_ortho,seed=1):
         # Build the model
         print('... building the 3rd orthogonality-constrained RNN')
-        # Allocate symbolic variables
         x = T.tensor3('x')
         y = T.ivector('y') # labels are a 1D vector of integers
         model = recurrent.rnn_ortho3(x,n_in,n_hidden,10,bptt_limit,numpy.random.RandomState(seed))
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_ortho*model.ortho
-        return optim.sgd(datasets,model,cost,x,y,batch_size,learning_rate,momentum,init_patience,n_epochs)
+        return optim.sgd(datasets,model,cost,x,y,n_train_batches,n_valid_batches,n_test_batches,
+                         batch_size,learning_rate,momentum,init_patience,n_epochs)
     
     # repeat the test and log all the returns
     def repeat_test(fn,rep):
