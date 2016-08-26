@@ -97,18 +97,18 @@ def experiment(learning_rate=1e-1, n_in=14, n_hidden=256,
     
     # log results in a csv file
     def log_results(filename,line,hyperparam,valid_results,test_results):
-        import csv
+#        import csv
         import os
         if line==0:
             # check if old log exists and delete
             if os.path.isfile(filename):
                 os.remove(filename)
-        file = open(filename,'wt')
-        writer = csv.writer(file)
+        file = open(filename,'a')
+#        writer = csv.writer(file)
         if line==0:
-            writer.writerow(('Hyperparameters','Validation mean',
+            file.write(('Hyperparameters','Validation mean',
                              'Validation min','Test mean','Test min'))
-        writer.writerow((hyperparam,numpy.mean(valid_results),
+        file.write((hyperparam,numpy.mean(valid_results),
                          numpy.min(valid_results),numpy.mean(test_results),
                          numpy.min(test_results)))
     
