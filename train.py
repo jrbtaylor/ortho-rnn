@@ -19,8 +19,8 @@ import optim
 
 def experiment(learning_rate=1e-1, n_in=14, n_hidden=256,
                bptt_limit=784, momentum=0.9, l1_reg=0, l2_reg=1e-3,
-               n_epochs=500, init_patience=20, batch_size=1000,
-               repeated_exp=10):
+               n_epochs=1, init_patience=20, batch_size=1000,
+               repeated_exp=2):
     # Load the data
     datasets = data.load('mnist.pkl.gz')
     train_set_x, train_set_y = datasets[0] # x is 50000x784 (flattened 28x28)
