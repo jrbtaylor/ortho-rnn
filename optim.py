@@ -15,6 +15,7 @@ from collections import OrderedDict
 import timeit
 import math
 
+
 def sgd(data, model, cost, x, y,
         n_train_batches, n_valid_batches, n_test_batches,
         batch_size, learning_rate, momentum,
@@ -31,15 +32,17 @@ def sgd(data, model, cost, x, y,
     # Initialize momentum
     gparams_mom = []
     for param in model.params:
-        gparam_mom = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,
-                                               dtype=theano.config.floatX))
+        gparam_mom = theano.shared(
+                         numpy.zeros(param.get_value(borrow=True).shape,
+                         dtype=theano.config.floatX))
         gparams_mom.append(gparam_mom)
     # Setup backprop
     gparams = T.grad(cost,model.params)
     updates = OrderedDict()
     # Momentum update
     for gparam_mom, gparam in zip(gparams_mom,gparams):
-        updates[gparam_mom] = momentum*gparam_mom-(1.-momentum)*learning_rate*gparam
+        updates[gparam_mom] = momentum*gparam_mom \
+                              -(1.-momentum)*learning_rate*gparam
     # Parameter update
     for param,gparam_mom in zip(model.params,gparams_mom):
         updates[param] = param+updates[gparam_mom]
@@ -49,18 +52,24 @@ def sgd(data, model, cost, x, y,
                                   outputs=(cost,model.errors(y)),
                                   updates=updates,
                                   givens={
-                                      x: train_set_x[index*batch_size:(index+1)*batch_size],
-                                      y: train_set_y[index*batch_size:(index+1)*batch_size]})
+                                      x: train_set_x[index*batch_size: \
+                                         (index+1)*batch_size],
+                                      y: train_set_y[index*batch_size: \
+                                         (index+1)*batch_size]})
     test_model = theano.function(inputs=[index],
                                  outputs=model.errors(y),
                                  givens={
-                                     x: test_set_x[index*batch_size:(index+1)*batch_size],
-                                     y: test_set_y[index*batch_size:(index+1)*batch_size]})
+                                     x: test_set_x[index*batch_size: \
+                                        (index+1)*batch_size],
+                                     y: test_set_y[index*batch_size: \
+                                        (index+1)*batch_size]})
     valid_model = theano.function(inputs=[index],
                                  outputs=model.errors(y),
                                  givens={
-                                     x: valid_set_x[index*batch_size:(index+1)*batch_size],
-                                     y: valid_set_y[index*batch_size:(index+1)*batch_size]})
+                                     x: valid_set_x[index*batch_size: \
+                                        (index+1)*batch_size],
+                                     y: valid_set_y[index*batch_size: \
+                                        (index+1)*batch_size]})
     
     # Train the model
     print('... training the model')
@@ -117,22 +126,15 @@ def sgd(data, model, cost, x, y,
                 done_looping = True
                 break
         end_time = timeit.default_timer()
-        print(
-            (
-                'Epoch %i, training loss: %f, training error: %f %%, time per sample: %f ms'
-                ) %
-                (
-                    epoch,
-                    train_loss_epoch/n_train_batches,
-                    train_errors_epoch/n_train_batches*100,
-                    (end_time-start_time)/(iter-start_iter)/batch_size*1000
-                )
-            )
-    print(
-        (
-            'Optimization complete with best validation error of %f %%,'
-            'with test error %f %%'
-        )
-        % (best_validation_loss * 100., test_score * 100.)
-    )
+        print(('Epoch %i, training loss: %f, training error: %f %%, '
+                'time per sample: %f ms')
+              % (epoch,
+                 train_loss_epoch/n_train_batches,
+                 train_errors_epoch/n_train_batches*100,
+                 (end_time-start_time)/(iter-start_iter)/batch_size*1000)
+             )
+    print(('Optimization complete with best validation error of %f %%,'
+            'with test error %f %%')
+          % (best_validation_loss * 100., test_score * 100.)
+         )
     return (best_validation_loss*100,test_score*100)

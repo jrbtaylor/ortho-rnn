@@ -15,6 +15,7 @@ from theano.tensor.nnet.nnet import softmax, categorical_crossentropy
 
 rng0 = numpy.random.RandomState(1)
 
+
 def _uniform_weight(n1,n2,rng=rng0):
     limit = numpy.sqrt(6./(n1+n2))
     return theano.shared((rng.uniform(low=-limit,
@@ -23,15 +24,18 @@ def _uniform_weight(n1,n2,rng=rng0):
                          ).astype(theano.config.floatX),
                          borrow=True)
 
+
 def _ortho_weight(n,rng=rng0):
     W = rng.randn(n, n)
     u, s, v = numpy.linalg.svd(W)
     return theano.shared(u.astype(theano.config.floatX),
                          borrow=True)
 
+
 def _zero_bias(n):
     return theano.shared(numpy.zeros((n,),dtype=theano.config.floatX),
                          borrow=True)
+
 
 class rnn(object):
     def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
@@ -96,7 +100,10 @@ class rnn_ortho(rnn):
                                                self.bh,self.by],
                                 strict=True)
         self.idem = T.mean(hmh)
-        self.norm = 0.5*T.mean(T.abs_(T.ones(n_hidden)-T.sum(T.sqr(self.Wh),axis=0)))+0.5*T.mean(T.abs_(T.ones(n_hidden)-T.sum(T.sqr(self.Wh),axis=1)))
+        self.norm = 0.5*T.mean(T.abs_(T.ones(n_hidden)- \
+                                      T.sum(T.sqr(self.Wh),axis=0))) \
+                    +0.5*T.mean(T.abs_(T.ones(n_hidden)- \
+                                       T.sum(T.sqr(self.Wh),axis=1)))
 
         
 class rnn_ortho2(rnn):
@@ -117,13 +124,17 @@ class rnn_ortho2(rnn):
                                                self.bh,self.by],
                                 strict=True)
         self.idem = T.mean(hmh)
-        self.norm = 0.5*T.mean(T.abs_(T.ones(n_hidden)-T.sum(T.sqr(self.Wh),axis=0)))+0.5*T.mean(T.abs_(T.ones(n_hidden)-T.sum(T.sqr(self.Wh),axis=1)))
+        self.norm = 0.5*T.mean(T.abs_(T.ones(n_hidden)- \
+                                      T.sum(T.sqr(self.Wh),axis=0))) \
+                    +0.5*T.mean(T.abs_(T.ones(n_hidden)- \
+                                       T.sum(T.sqr(self.Wh),axis=1)))
 
 
 class rnn_ortho3(rnn):
     def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
         super(rnn_ortho3,self).__init__(x,n_in,n_hidden,n_out,bptt_limit)
-        self.ortho = T.sum(T.sqr(T.dot(self.Wh,self.Wh.T)-T.identity_like(self.Wh)))
+        self.ortho = T.sum(T.sqr(T.dot(self.Wh,self.Wh.T)- \
+                                 T.identity_like(self.Wh)))
         
         
         
