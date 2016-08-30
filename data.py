@@ -27,7 +27,7 @@ def load(dataset):
     if (not os.path.isfile(dataset)) and data_file == 'mnist.pkl.gz':
         from six.moves import urllib
         origin = (
-            'http://www-labs.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz'
+          'http://www-labs.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz'
         )
         print('Downloading data from %s' % origin)
         urllib.request.urlretrieve(origin, dataset)
