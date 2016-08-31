@@ -184,5 +184,9 @@ def experiment(learning_rate=1e-1, bptt_limit=784, momentum=0.9,
                         valid_results,test_results)
 
 if __name__ == "__main__":
-    
-    experiment()
+    import argparse
+    parser = argparse.ArgumentParser(description='Run RNN experiments')
+    parser.add_argument('--exp',nargs='*',type=str,
+                        default=['gradclip','ortho1','ortho2','ortho3'])
+    print(parser.parse_args().exp)
+    experiment(to_run=parser.parse_args().exp)
