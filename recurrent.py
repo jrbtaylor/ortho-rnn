@@ -74,6 +74,9 @@ class rnn(object):
                                 strict=True)
         self.output = y[-1]
         self.pred = T.argmax(self.output,axis=-1)
+        weight_norms = [T.sqrt(T.sum(T.sqr(w))) for w in [self.Wx,self.Wh,self.Wy]]
+        orthogonality = T.sum(T.sqr(T.dot(self.Wh,self.Wh.T)-T.identity_like(self.Wh)))
+        self.monitors = T.as_tensor_variable(weight_norms+[orthogonality])
 
     def crossentropy(self,y):
         return T.mean(categorical_crossentropy(self.output,y))

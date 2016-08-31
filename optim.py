@@ -49,7 +49,9 @@ def sgd(data, model, cost, x, y,
 
     # Compiled functions
     train_model = theano.function(inputs=[index],
-                                  outputs=(cost,model.errors(y)),
+                                  outputs=(cost,
+                                           model.errors(y),
+                                           model.monitors),
                                   updates=updates,
                                   givens={
                                       x: train_set_x[index*batch_size: \
@@ -90,7 +92,8 @@ def sgd(data, model, cost, x, y,
         train_loss_epoch = 0
         train_errors_epoch = 0
         for minibatch_index in range(n_train_batches):
-            train_loss_batch,train_errors_batch = train_model(minibatch_index)
+            train_loss_batch,train_errors_batch,monitors \
+                    = train_model(minibatch_index)
             train_loss_epoch += train_loss_batch
             train_errors_epoch += train_errors_batch
 
@@ -133,8 +136,9 @@ def sgd(data, model, cost, x, y,
                  train_errors_epoch/n_train_batches*100,
                  (end_time-start_time)/(iter-start_iter)/batch_size*1000)
              )
+        print(monitors)
     print(('Optimization complete with best validation error of %f %%,'
             'with test error %f %%')
           % (best_validation_loss * 100., test_score * 100.)
          )
-    return (best_validation_loss*100,test_score*100)
+    return (best_validation_loss*100,test_score*100,monitors)
