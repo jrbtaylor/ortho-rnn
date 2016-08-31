@@ -153,9 +153,9 @@ def experiment(learning_rate=1e-1, bptt_limit=784, momentum=0.9,
                                             n_ins,
                                             n_hiddens)):
             fn = lambda seed: test_orthopen(eps_idem,eps_norm,n_in,n_hidden,seed)
-            valid_results, test_results = repeat_test(fn,repeated_exp)
+            valid_results, test_results, monitors = repeat_test(fn,repeated_exp)
             log_results('orthopen1.csv',idx,[eps_idem,eps_norm],n_in,n_hidden,
-                        valid_results,test_results)
+                        valid_results,test_results,monitors)
         
     # hyperparameter search for orthogonality penalty
     if any('ortho2' in s for s in to_run):
@@ -167,9 +167,9 @@ def experiment(learning_rate=1e-1, bptt_limit=784, momentum=0.9,
                                             n_ins,
                                             n_hiddens)):
             fn = lambda seed: test_orthopen2(eps_idem,eps_norm,n_in,n_hidden,seed)
-            valid_results, test_results = repeat_test(fn,repeated_exp)
+            valid_results, test_results, monitors = repeat_test(fn,repeated_exp)
             log_results('orthopen2.csv',idx,[eps_idem,eps_norm],n_in,n_hidden,
-                        valid_results,test_results)
+                        valid_results,test_results,monitors)
     
     # hyperparameter search for orthogonality penalty
     if any('ortho3' in s for s in to_run):
@@ -179,9 +179,9 @@ def experiment(learning_rate=1e-1, bptt_limit=784, momentum=0.9,
                                             n_ins,
                                             n_hiddens)):
             fn = lambda seed: test_orthopen3(eps_ortho,n_in,n_hidden,seed)
-            valid_results, test_results = repeat_test(fn,repeated_exp)
+            valid_results, test_results, monitors = repeat_test(fn,repeated_exp)
             log_results('orthopen3.csv',idx,eps_ortho,n_in,n_hidden,
-                        valid_results,test_results)
+                        valid_results,test_results,monitors)
 
 if __name__ == "__main__":
     import argparse
