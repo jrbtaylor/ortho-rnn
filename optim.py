@@ -18,7 +18,7 @@ import math
 
 def sgd(data, model, cost, x, y,
         n_train_batches, n_valid_batches, n_test_batches,
-        batch_size, learning_rate, momentum,
+        batch_size, init_learning_rate, lr_decay, momentum,
         init_patience, n_epochs):
     # Unpack the data
     train_set_x, train_set_y = data[0]
@@ -27,6 +27,10 @@ def sgd(data, model, cost, x, y,
     
     # allocate symbolic variables for the data
     index = T.lscalar()  # index to a [mini]batch
+    
+    # Learning rate shared variable (for decay)
+    learning_rate = theano.shared(numpy.array(init_learning_rate,
+                                              dtype = theano.config.floatX))
 
     # SGD w/ momentum
     # Initialize momentum
@@ -128,6 +132,7 @@ def sgd(data, model, cost, x, y,
             if patience <= 0:
                 done_looping = True
                 break
+        learning_rate = learning_rate*lr_decay
         end_time = timeit.default_timer()
         print(('Epoch %i, training loss: %f, training error: %f %%, '
                 'time per sample: %f ms')
