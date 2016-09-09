@@ -70,7 +70,8 @@ def sgd(data, model, cost, x, y,
                                      y: test_set_y[index*batch_size: \
                                         (index+1)*batch_size]})
     valid_model = theano.function(inputs=[index],
-                                 outputs=model.errors(y),
+                                 outputs=(cost,
+                                          model.errors(y)),
                                  givens={
                                      x: valid_set_x[index*batch_size: \
                                         (index+1)*batch_size],
@@ -84,11 +85,16 @@ def sgd(data, model, cost, x, y,
     
     validation_frequency = n_train_batches
     best_validation_loss = numpy.inf
-    test_score = 0.
+    test_errors = 0.
     
     done_looping = False
     epoch = 0
     iter = 0
+    train_loss = []
+    train_errors = []
+    validation_loss = []
+    validation_errors = []
+    monitors = []
     while (epoch < n_epochs) and (not done_looping):
         start_time = timeit.default_timer()
         start_iter = iter
@@ -96,31 +102,34 @@ def sgd(data, model, cost, x, y,
         train_loss_epoch = 0
         train_errors_epoch = 0
         for minibatch_index in range(n_train_batches):
-            train_loss_batch,train_errors_batch,monitors \
-                    = train_model(minibatch_index)
+            train_loss_batch,train_errors_batch,monitors_batch \
+                        = train_model(minibatch_index)
             train_loss_epoch += train_loss_batch
             train_errors_epoch += train_errors_batch
 
             iter = (epoch - 1) * n_train_batches + minibatch_index
             if (iter + 1) % validation_frequency == 0:
-                validation_losses = [valid_model(i)
-                                     for i in range(n_valid_batches)]
-                this_validation_loss = numpy.mean(validation_losses)
-                print('   validation error: %f %%' %
-                    (this_validation_loss * 100.)
+                val_epoch = [valid_model(i)
+                                for i in range(n_valid_batches)]
+                # val_epoch contains [loss,errors] for each batch, so unpack
+                val_loss_epoch = numpy.mean([v[0] for v in val_epoch])
+                val_errors_epoch = numpy.mean([v[1] for v in val_epoch])
+                print('   validation loss: %f, validation error: %f %%' %
+                    (val_loss_epoch,val_errors_epoch * 100.)
                 )
 
                 # if we got the best validation score until now
-                if this_validation_loss < best_validation_loss:
+                if val_loss_epoch < best_validation_loss:
                     patience = init_patience*n_train_batches
-                    best_validation_loss = this_validation_loss
+                    best_validation_loss = val_loss_epoch
+                    best_validation_error = val_errors_epoch
 
-                    test_losses = [test_model(i)
+                    test_errors = [test_model(i)
                                    for i in range(n_test_batches)]
-                    test_score = numpy.mean(test_losses)
+                    test_errors = numpy.mean(test_errors)*100.
 
                     print(('      test error: %f %%') %
-                        (test_score * 100.)
+                        (test_errors)
                     )
                 elif math.isnan(train_loss_epoch):
                     print('Stopping training due to NaNs')
@@ -132,18 +141,29 @@ def sgd(data, model, cost, x, y,
             if patience <= 0:
                 done_looping = True
                 break
+        # normalize stuff
+        train_loss_epoch = train_loss_epoch/n_train_batches
+        train_errors_epoch = train_errors_epoch/n_train_batches*100
+        # log everything
+        train_loss.append(train_loss_epoch)
+        train_errors.append(train_errors_epoch)
+        validation_loss.append(val_loss_epoch)
+        validation_errors.append(val_errors_epoch*100)
+        monitors.append(monitors_batch)
+        # learning rate decay
         learning_rate = learning_rate*lr_decay
         end_time = timeit.default_timer()
         print(('Epoch %i, training loss: %f, training error: %f %%, '
                 'time per sample: %f ms')
               % (epoch,
-                 train_loss_epoch/n_train_batches,
-                 train_errors_epoch/n_train_batches*100,
+                 train_loss_epoch,
+                 train_errors_epoch,
                  (end_time-start_time)/(iter-start_iter)/batch_size*1000)
              )
-        print(monitors)
+        print(monitors_batch)
     print(('Optimization complete with best validation error of %f %%,'
-            'with test error %f %%')
-          % (best_validation_loss * 100., test_score * 100.)
+            ' with test error %f %%')
+          % (best_validation_error * 100., test_errors)
          )
-    return (best_validation_loss*100,test_score*100,monitors)
+    return (train_loss,train_errors,validation_loss,validation_errors,
+            test_errors,monitors)
