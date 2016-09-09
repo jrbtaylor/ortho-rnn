@@ -16,6 +16,7 @@ import itertools
 import data
 import recurrent
 import optim
+import graph
 
 
 def experiment(learning_rate=1e-1, lr_decay=0.99, bptt_limit=784, momentum=0.9,
@@ -162,6 +163,7 @@ def experiment(learning_rate=1e-1, lr_decay=0.99, bptt_limit=784, momentum=0.9,
             trn,vld,tst,mntrs = repeat_test(fn,repeated_exp)
             log_results('gradclip.csv',idx,clip_limit,n_in,n_hidden,
                         trn,vld,tst,mntrs)
+        graph.make_all('gradclip.csv')
         
     # hyperparameter search for orthogonality penalty
     if any('ortho1' in s for s in to_run):
@@ -176,6 +178,7 @@ def experiment(learning_rate=1e-1, lr_decay=0.99, bptt_limit=784, momentum=0.9,
             trn,vld,tst,mntrs = repeat_test(fn,repeated_exp)
             log_results('orthopen1.csv',idx,[eps_idem,eps_norm],n_in,n_hidden,
                         trn,vld,tst,mntrs)
+        graph.make_all('orthopen1.csv')
         
     # hyperparameter search for orthogonality penalty
     if any('ortho2' in s for s in to_run):
@@ -190,6 +193,7 @@ def experiment(learning_rate=1e-1, lr_decay=0.99, bptt_limit=784, momentum=0.9,
             trn,vld,tst,mntrs = repeat_test(fn,repeated_exp)
             log_results('orthopen2.csv',idx,[eps_idem,eps_norm],n_in,n_hidden,
                         trn,vld,tst,mntrs)
+        graph.make_all('orthopen2.csv')
     
     # hyperparameter search for orthogonality penalty
     if any('ortho3' in s for s in to_run):
@@ -202,6 +206,7 @@ def experiment(learning_rate=1e-1, lr_decay=0.99, bptt_limit=784, momentum=0.9,
             trn,vld,tst,mntrs = repeat_test(fn,repeated_exp)
             log_results('orthopen3.csv',idx,eps_ortho,n_in,n_hidden,
                         trn,vld,tst,mntrs)
+        graph.make_all('orthopen3.csv')
 
 if __name__ == "__main__":
     import argparse
