@@ -6,7 +6,10 @@ Created on Thu Sep  8 21:56:03 2016
 """
 #%%
 import os
+import numpy
 import csv
+import matplotlib
+matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend.
 import matplotlib.pyplot as plt
 
 def make_graph(filename,n_in,n_hidden,metric):
@@ -19,8 +22,8 @@ def make_graph(filename,n_in,n_hidden,metric):
     # read the labels from the first row
     categories = reader.next()
     assert(categories==['Hyperparameters', 'n_in', 'n_hidden', 'Training loss',
-                        'Training error%', 'Validation loss', 'Validation error%',
-                        'Test error%', '|Wx|', '|Wh|', '|Wy|', '|WWt-I|'])
+                        'Training error', 'Validation loss', 'Validation error',
+                        'Test error', '|Wx|', '|Wh|', '|Wy|', '|WWt-I|'])
     assert(metric in categories)
     
     # read the desired metric
@@ -38,7 +41,9 @@ def make_graph(filename,n_in,n_hidden,metric):
             hyperparam.append(row[0])
     
     # plot it
-    if len(data>0): # don't want to save blank graphs
+    if len(data)>0: # don't want to save blank graphs
+        
+        # loop through each row and plot
         for idx,d in enumerate(data):
             plt.plot(range(1,len(d)+1),d,label=hyperparam[idx])
         plt.xlabel('Epoch')
@@ -46,8 +51,14 @@ def make_graph(filename,n_in,n_hidden,metric):
         plt.title(metric+' vs hyperparameter'+
                   '\n for n_in='+str(n_in)+', n_hidden='+str(n_hidden))
         
-        ymin,ymax = plt.ylim()
-        plt.ylim(0,ymax)
+        # basic outlier detection for setting graph limits
+        ymaxs = [numpy.max(d) for d in data]
+        ylim = numpy.max(ymaxs)
+        everythingelse = [ymaxs[i] for i in range(len(ymaxs)) \
+                            if i!=numpy.argmax(ymaxs)]
+        if ylim > 10*numpy.max(everythingelse):
+            ylim = numpy.max(everythingelse)
+        plt.ylim(0,ylim)
         plt.legend()
         
         # save it
@@ -59,6 +70,7 @@ def make_graph(filename,n_in,n_hidden,metric):
             os.mkdir(subfolder)
         saveto = metric+'_'+str(n_in)+'in_'+str(n_hidden)+'hidden'
         plt.savefig(os.path.join(subfolder,saveto+'.png'))
+        plt.close()
     else:
         print('Empty graph not saved for '+filename+', '+metric+', '
               +str(n_in)+'in, '+str(n_hidden)+'hidden')
@@ -76,13 +88,14 @@ def make_all(filename):
     # read the labels from the first row
     categories = reader.next()
     assert(categories==['Hyperparameters', 'n_in', 'n_hidden', 'Training loss',
-                        'Training error%', 'Validation loss', 'Validation error%',
-                        'Test error%', '|Wx|', '|Wh|', '|Wy|', '|WWt-I|'])
+                        'Training error', 'Validation loss', 'Validation error',
+                        'Test error', '|Wx|', '|Wh|', '|Wy|', '|WWt-I|'])
     
     # read the file
     n_ins = []
     n_hiddens = []
     metrics = categories[3:]
+    metrics.remove('Test error')
     for row in reader:
         n_ins.append(row[categories.index('n_in')])
         n_hiddens.append(row[categories.index('n_hidden')])
@@ -91,6 +104,8 @@ def make_all(filename):
 
     # loop through everything and make all the graphs
     for n_in,n_hidden,metric in itertools.product(n_ins,n_hiddens,metrics):
+        print(('making graph for '+metric+' : n_in = %s, n_hidden = %s') \
+              % (n_in,n_hidden))
         make_graph(filename,n_in,n_hidden,metric)
 
 
