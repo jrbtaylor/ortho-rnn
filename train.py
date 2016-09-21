@@ -194,7 +194,7 @@ if __name__ == "__main__":
     parser.add_argument('--overwrite',nargs='*',type=bool,
                         default=False)
     print(parser.parse_args().exp)
-    print(parser.parge_args().learnrate)
+    print(parser.parse_args().learnrate)
     experiment(to_run=parser.parse_args().exp,
                n_ins=parser.parse_args().n_in,
                n_hiddens=parser.parse_args().n_hidden,
