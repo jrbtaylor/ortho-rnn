@@ -190,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('--n_hidden',nargs='*',type=int,
                         default=[64,256])
     parser.add_argument('--learnrate',nargs='*',type=float,
-                        default=0.1)
+                        default=[0.1])
     parser.add_argument('--overwrite',nargs='*',type=bool,
                         default=False)
     print(parser.parse_args().exp)
