@@ -197,5 +197,5 @@ if __name__ == "__main__":
     experiment(to_run=parser.parse_args().exp,
                n_ins=parser.parse_args().n_in,
                n_hiddens=parser.parse_args().n_hidden,
-               learning_rate=parser.parse_args().learnrate,
+               learning_rate=(parser.parse_args().learnrate).astype('float32'),
                overwrite=parser.parse_args().overwrite)
