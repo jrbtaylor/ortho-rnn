@@ -2,6 +2,9 @@
 """
 Created on Tue Aug 16 01:52:13 2016
 
+Compare the non-orthogonality constraint with gradient clipping on regular RNNs
+testing on MNIST pixels (n_in>1 at a time)
+
 @author: jrbtaylor
 """
 
