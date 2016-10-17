@@ -83,59 +83,10 @@ class rnn(object):
     
     def errors(self,y):
         return T.mean(T.neq(self.pred,y))
-        
 
 class rnn_ortho(rnn):
     def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
         super(rnn_ortho,self).__init__(x,n_in,n_hidden,n_out,bptt_limit)
-        def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
-            hWh = T.dot(h_tm1,Wh)
-            hmh = T.mean(T.sqr(h_tm1-hWh))
-            h_t = relu(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
-            y_t = softmax(T.dot(h_t,Wy)+by)
-            return [h_t,y_t,hmh]
-        h0 = T.zeros((n_hidden,),dtype=theano.config.floatX)
-        ([h,y,hmh],_) = theano.scan(fn=step, 
-                                sequences=x.dimshuffle([1,0,2]),
-                                outputs_info=[T.alloc(h0,x.shape[0],n_hidden),
-                                              None,None],
-                                non_sequences=[self.Wx,self.Wh,self.Wy,
-                                               self.bh,self.by],
-                                strict=True)
-        self.idem = T.mean(hmh)
-        self.norm = 0.5*T.mean(T.abs_(T.ones(n_hidden)- \
-                                      T.sum(T.sqr(self.Wh),axis=0))) \
-                    +0.5*T.mean(T.abs_(T.ones(n_hidden)- \
-                                       T.sum(T.sqr(self.Wh),axis=1)))
-
-        
-class rnn_ortho2(rnn):
-    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
-        super(rnn_ortho2,self).__init__(x,n_in,n_hidden,n_out,bptt_limit)
-        def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
-            hWh = T.dot(h_tm1,Wh)
-            hmh = T.mean(T.sqr(hWh-T.dot(hWh,Wh)))
-            h_t = relu(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
-            y_t = softmax(T.dot(h_t,Wy)+by)
-            return [h_t,y_t,hmh]
-        h0 = T.zeros((n_hidden,),dtype=theano.config.floatX)
-        ([h,y,hmh],_) = theano.scan(fn=step, 
-                                sequences=x.dimshuffle([1,0,2]),
-                                outputs_info=[T.alloc(h0,x.shape[0],n_hidden),
-                                              None,None],
-                                non_sequences=[self.Wx,self.Wh,self.Wy,
-                                               self.bh,self.by],
-                                strict=True)
-        self.idem = T.mean(hmh)
-        self.norm = 0.5*T.mean(T.abs_(T.ones(n_hidden)- \
-                                      T.sum(T.sqr(self.Wh),axis=0))) \
-                    +0.5*T.mean(T.abs_(T.ones(n_hidden)- \
-                                       T.sum(T.sqr(self.Wh),axis=1)))
-
-
-class rnn_ortho3(rnn):
-    def __init__(self,x,n_in,n_hidden,n_out,bptt_limit,rng=rng0):
-        super(rnn_ortho3,self).__init__(x,n_in,n_hidden,n_out,bptt_limit)
         self.ortho = T.sum(T.sqr(T.dot(self.Wh,self.Wh.T)- \
                                  T.identity_like(self.Wh)))
         
