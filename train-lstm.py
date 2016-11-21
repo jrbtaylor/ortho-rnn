@@ -22,7 +22,7 @@ import graph
 
 
 def experiment(n_ins=[2],n_hiddens=[64,256,512],overwrite=False,
-               learning_rate=1e-1, lr_decay=0.95, momentum=0.9,
+               learning_rate=1e-1, lr_decay=0.95, momentum=0.,
                l1_reg=0, l2_reg=1e-5, n_epochs=1000, init_patience=200, 
                batch_size=1000, repeated_exp=5):
     
@@ -55,10 +55,13 @@ def experiment(n_ins=[2],n_hiddens=[64,256,512],overwrite=False,
         cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
                eps_ortho*model.ortho
         cost = theano.gradient.grad_clip(cost,-10,10)
-        return optim.sgd(dataprep(n_in),model,cost,x,y,n_train_batches,
-                         n_valid_batches,n_test_batches,batch_size,
-                         learning_rate,lr_decay,momentum,
-                         init_patience,n_epochs)
+        return optim.experiment(dataprep(n_in),model,cost,x,y,
+                                n_train_batches,n_valid_batches,n_test_batches,
+                                batch_size,init_patience,n_epochs)
+#        return optim.sgd(dataprep(n_in),model,cost,x,y,n_train_batches,
+#                         n_valid_batches,n_test_batches,batch_size,
+#                         learning_rate,lr_decay,momentum,
+#                         init_patience,n_epochs)
     
     # repeat the test and log all the returns
     def repeat_test(fn,rep):
