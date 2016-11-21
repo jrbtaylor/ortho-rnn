@@ -112,7 +112,7 @@ def experiment(n_ins=[2],n_hiddens=[64,256,512],overwrite=False,
                          normWx,normWh,normWy,orthog))
     
     # hyperparameter search
-    eps_orthos = [10**x for x in range(-4,0)]+[0]
+    eps_orthos = [0] #[10**x for x in range(-4,0)]+[0]
     for idx,(eps_ortho,n_in,n_hidden) in \
             enumerate(itertools.product(eps_orthos,
                                         n_ins,
