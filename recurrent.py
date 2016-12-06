@@ -37,8 +37,15 @@ def _zero_bias(n):
                          borrow=True)
 
 
+def layer_norm(h,scale=1,shift=0,eps=1e-5):
+    mean = T.mean(h,axis=1,keepdims=True,dtype=theano.config.floatX)
+    std = T.std(h,axis=1,keepdims=True)
+    normed = (h-mean)/(eps+std)
+    return scale*normed+shift
+
+
 class rnn(object):
-    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0):
+    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0,layernorm=False):
         """
         Initialize a basic single-layer RNN
         
@@ -59,8 +66,27 @@ class rnn(object):
         self.L1 = numpy.sum([abs(w).sum() for w in self.W])
         self.L2 = numpy.sum([(w**2).sum() for w in self.W])
         
+        if layernorm:
+            scale1 = theano.shared(numpy.ones((n_hidden,),
+                                              dtype=theano.config.floatX),
+                                              borrow=True)
+            shift1 = theano.shared(numpy.zeros((n_hidden,),
+                                              dtype=theano.config.floatX),
+                                              borrow=True)
+            scale2 = theano.shared(numpy.ones((n_hidden,),
+                                              dtype=theano.config.floatX),
+                                              borrow=True)
+            shift2 = theano.shared(numpy.zeros((n_hidden,),
+                                              dtype=theano.config.floatX),
+                                              borrow=True)
+            
+        
         def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
-            h_t = sigmoid(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
+            if layernorm:
+                h_t = sigmoid(layernorm(T.dot(x_t,Wx),scale1,shift1)
+                              +layernorm(T.dot(h_tm1,Wh),scale2,shift2)+bh)
+            else:
+                h_t = sigmoid(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
             y_t = softmax(T.dot(h_t,Wy)+by)
             return [h_t,y_t]
         h0 = T.zeros((n_hidden,),dtype=theano.config.floatX)
@@ -85,7 +111,7 @@ class rnn(object):
 
 
 class rnn_ortho(rnn):
-    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0):
+    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0,layernorm=False):
         super(rnn_ortho,self).__init__(x,n_in,n_hidden,n_out,rng)
         self.ortho = T.sum(T.sqr(T.dot(self.Wh,self.Wh.T)- \
                                  T.identity_like(self.Wh)))
