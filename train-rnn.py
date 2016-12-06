@@ -23,9 +23,9 @@ import graph
 
 
 def experiment(n_ins=[7],n_hiddens=[64],overwrite=False,
-               learning_rate=1e-1, lr_decay=0.99, momentum=0.1,
+               learning_rate=1e-1, lr_decay=0.99, momentum=0.5,
                l1_reg=0, l2_reg=1e-3, n_epochs=500, init_patience=20, 
-               batch_size=1000, repeated_exp=5,
+               batch_size=1000, repeated_exp=3,
                to_run=['gradclip','ortho','both']):
     
     # Load the data
@@ -216,9 +216,9 @@ if __name__ == "__main__":
     parser.add_argument('--exp',nargs='*',type=str,
                         default=['gradclip','ortho','both','norm'])
     parser.add_argument('--n_in',nargs='*',type=int,
-                        default=[7,16])
+                        default=[7])
     parser.add_argument('--n_hidden',nargs='*',type=int,
-                        default=[64,256])
+                        default=[64])
     parser.add_argument('--learnrate',nargs='*',type=float,
                         default=[0.1])
     parser.add_argument('--overwrite',nargs='*',type=bool,
