@@ -82,8 +82,8 @@ class rnn(object):
         
         def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
             if layernorm:
-                h_t = sigmoid(layernorm(T.dot(x_t,Wx),scale1,shift1)
-                              +layernorm(T.dot(h_tm1,Wh),scale2,shift2)+bh)
+                h_t = sigmoid(layer_norm(T.dot(x_t,Wx),scale1,shift1)
+                              +layer_norm(T.dot(h_tm1,Wh),scale2,shift2)+bh)
             else:
                 h_t = sigmoid(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
             if gradclip!=False:
