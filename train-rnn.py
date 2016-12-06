@@ -54,9 +54,8 @@ def experiment(n_ins=[7],n_hiddens=[64],overwrite=False,
         x = T.tensor3('x')
         y = T.ivector('y') # labels are a 1D vector of integers
         rng = numpy.random.RandomState(seed)
-        model = recurrent.rnn(x,n_in,n_hidden,10,rng)
-        unclipped_cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2
-        cost = theano.gradient.grad_clip(unclipped_cost,-clip_limit,clip_limit)
+        model = recurrent.rnn(x,n_in,n_hidden,10,rng,gradclip=clip_limit)
+        cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2
         return optim.sgd(dataprep(n_in),model,cost,x,y,n_train_batches,
                          n_valid_batches,n_test_batches,batch_size,
                          learning_rate,lr_decay,momentum,
@@ -82,10 +81,9 @@ def experiment(n_ins=[7],n_hiddens=[64],overwrite=False,
         x = T.tensor3('x')
         y = T.ivector('y')
         rng = numpy.random.RandomState(seed)
-        model = recurrent.rnn_ortho(x,n_in,n_hidden,10,rng)
-        unclipped_cost = model.crossentropy(y)+l1_reg*model.L1 \
-                         +l2_reg*model.L2+eps_ortho*model.ortho
-        cost = theano.gradient.grad_clip(unclipped_cost,-clip_limit,clip_limit)
+        model = recurrent.rnn_ortho(x,n_in,n_hidden,10,rng,gradclip=clip_limit)
+        cost = model.crossentropy(y)+l1_reg*model.L1+l2_reg*model.L2+ \
+               eps_ortho*model.ortho
         return optim.sgd(dataprep(n_in),model,cost,x,y,n_train_batches,
                          n_valid_batches,n_test_batches,batch_size,
                          learning_rate,lr_decay,momentum,

@@ -45,7 +45,7 @@ def layer_norm(h,scale=1,shift=0,eps=1e-5):
 
 
 class rnn(object):
-    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0,layernorm=False):
+    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0,gradclip=False,layernorm=False):
         """
         Initialize a basic single-layer RNN
         
@@ -79,7 +79,6 @@ class rnn(object):
             shift2 = theano.shared(numpy.zeros((n_hidden,),
                                               dtype=theano.config.floatX),
                                               borrow=True)
-            
         
         def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
             if layernorm:
@@ -87,6 +86,8 @@ class rnn(object):
                               +layernorm(T.dot(h_tm1,Wh),scale2,shift2)+bh)
             else:
                 h_t = sigmoid(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
+            if gradclip!=False:
+                h_t = theano.gradient.grad_clip(h_t,-gradclip,gradclip)
             y_t = softmax(T.dot(h_t,Wy)+by)
             return [h_t,y_t]
         h0 = T.zeros((n_hidden,),dtype=theano.config.floatX)
@@ -111,7 +112,7 @@ class rnn(object):
 
 
 class rnn_ortho(rnn):
-    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0,layernorm=False):
+    def __init__(self,x,n_in,n_hidden,n_out,rng=rng0,gradclip=False,layernorm=False):
         super(rnn_ortho,self).__init__(x,n_in,n_hidden,n_out,rng)
         self.ortho = T.sum(T.sqr(T.dot(self.Wh,self.Wh.T)- \
                                  T.identity_like(self.Wh)))
