@@ -60,7 +60,7 @@ class rnn(object):
         self.L2 = numpy.sum([(w**2).sum() for w in self.W])
         
         def step(x_t,h_tm1,Wx,Wh,Wy,bh,by):
-            h_t = relu(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
+            h_t = sigmoid(T.dot(x_t,Wx)+T.dot(h_tm1,Wh)+bh)
             y_t = softmax(T.dot(h_t,Wy)+by)
             return [h_t,y_t]
         h0 = T.zeros((n_hidden,),dtype=theano.config.floatX)
